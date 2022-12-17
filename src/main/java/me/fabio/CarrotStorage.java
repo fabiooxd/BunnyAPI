@@ -25,19 +25,14 @@ public class CarrotStorage {
     private final String zoneName;
 
     private final HttpClient client;
-    public static final Gson gson = new GsonBuilder()
-            .serializeNulls()
-            .setPrettyPrinting()
-            .create();
+    public static final Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
 
     public CarrotStorage(String key, String zoneName, Endpoint endpoint) {
         this.key = key;
         this.url = endpoint.buildUrl();
         this.zoneName = zoneName;
 
-        this.client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(5))
-                .build();
+        this.client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     }
 
     public Delivery upload(byte[] data, String path, String fileName) {
@@ -54,7 +49,7 @@ public class CarrotStorage {
 
     public Optional<List<Carrot>> list(String path) {
         if (path.isBlank()) {
-            path = "%5C";
+            path = "/";
         } else if (!path.endsWith("/")) {
             path += "/";
         }
