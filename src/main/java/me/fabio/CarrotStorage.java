@@ -23,7 +23,7 @@ public record CarrotStorage(String key, String url, String zoneName, HttpClient 
     public static final Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
 
     public CarrotStorage(String key, String zoneName, Endpoint endpoint) {
-        this(key, endpoint.buildUrl(), zoneName, HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build());
+        this(key, endpoint.buildUrl(), zoneName, HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
     }
 
     public Delivery upload(byte[] data, String path, String fileName) {
@@ -75,7 +75,7 @@ public record CarrotStorage(String key, String url, String zoneName, HttpClient 
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .method(action.getMethod(), publisher)
                     .header("AccessKey", key)
-                    .timeout(Duration.ofSeconds(10))
+                    .timeout(Duration.ofSeconds(5))
                     .uri(new URI(url + "/" + zoneName + "/" + method));
 
             if (data != null) {
@@ -103,7 +103,7 @@ public record CarrotStorage(String key, String url, String zoneName, HttpClient 
                 }
             }
 
-            return new Delivery(generateJson("Bad request (probably)", false), code, null, Void.TYPE);
+            return new Delivery(generateJson("Bad Request", false), code, null, Void.TYPE);
         } catch (IOException | InterruptedException e) {
             return new Delivery(generateJson(e.getMessage(), false), 400, null, Void.TYPE);
         }
