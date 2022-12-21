@@ -3,7 +3,6 @@ package me.fabio.objects;
 import com.google.gson.annotations.SerializedName;
 import me.fabio.CarrotStorage;
 
-@SuppressWarnings("unused")
 public record Carrot(@SerializedName("FailIndex") long failIndex,
                      @SerializedName("Guid") String guid,
                      @SerializedName("StorageZoneName") String storageZoneName,

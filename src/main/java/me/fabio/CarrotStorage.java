@@ -18,21 +18,12 @@ import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
-public class CarrotStorage {
+public record CarrotStorage(String key, String url, String zoneName, HttpClient httpClient) {
 
-    private final String key;
-    private final String url;
-    private final String zoneName;
-
-    private final HttpClient client;
     public static final Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
 
     public CarrotStorage(String key, String zoneName, Endpoint endpoint) {
-        this.key = key;
-        this.url = endpoint.buildUrl();
-        this.zoneName = zoneName;
-
-        this.client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+        this(key, endpoint.buildUrl(), zoneName, HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build());
     }
 
     public Delivery upload(byte[] data, String path, String fileName) {
@@ -56,15 +47,15 @@ public class CarrotStorage {
 
         Delivery delivery = sendRequest(path, null, Action.LIST);
         if (delivery.isSuccessful()) {
-            String str = delivery.toObject();
+            String toObject = delivery.toObject();
 
-            JsonArray array = JsonParser.parseString(str).getAsJsonArray();
+            JsonArray array = JsonParser.parseString(toObject).getAsJsonArray();
             List<Carrot> list = new ArrayList<>();
-            for (JsonElement ele : array) {
+            for (JsonElement jsonElement : array) {
                 Carrot carrot;
                 try {
-                    carrot = gson.fromJson(ele, Carrot.class);
-                } catch (JsonSyntaxException ex) {
+                    carrot = gson.fromJson(jsonElement, Carrot.class);
+                } catch (JsonSyntaxException e) {
                     continue;
                 }
                 list.add(carrot);
@@ -77,35 +68,35 @@ public class CarrotStorage {
     }
 
     private Delivery sendRequest(String method, byte[] data, Action action) {
-        HttpRequest.BodyPublisher publisher = data != null
-                ? HttpRequest.BodyPublishers.ofByteArray(data)
-                : HttpRequest.BodyPublishers.noBody();
+        HttpRequest.BodyPublisher publisher = data != null ? HttpRequest.BodyPublishers.ofByteArray(data) : HttpRequest.BodyPublishers.noBody();
 
         HttpRequest request;
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .method(action.getMethod(), publisher)
                     .header("AccessKey", key)
-                    .timeout(Duration.ofSeconds(5))
+                    .timeout(Duration.ofSeconds(10))
                     .uri(new URI(url + "/" + zoneName + "/" + method));
 
-            if (data != null) builder.setHeader("content-type", "application/octet-stream");
+            if (data != null) {
+                builder.setHeader("content-type", "application/octet-stream");
+            }
 
             request = builder.build();
-        } catch (URISyntaxException ex) {
-            return new Delivery(generateJson(ex.getMessage(), false), 400, null, Void.TYPE);
+        } catch (URISyntaxException e) {
+            return new Delivery(generateJson(e.getMessage(), false), 400, null, Void.TYPE);
         }
 
         try {
             int code;
             if (action.equals(Action.DOWNLOAD)) {
-                HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+                HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
                 code = response.statusCode();
                 if (HttpUtils.successful(code)) {
                     return new Delivery(generateJson("File downloaded", true), code, response.body(), byte[].class);
                 }
             } else {
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
                 code = response.statusCode();
                 if (HttpUtils.successful(code)) {
                     return new Delivery(generateJson("Success", true), code, response.body(), String.class);
@@ -113,15 +104,15 @@ public class CarrotStorage {
             }
 
             return new Delivery(generateJson("Bad request (probably)", false), code, null, Void.TYPE);
-        } catch (IOException | InterruptedException ex) {
-            return new Delivery(generateJson(ex.getMessage(), false), 400, null, Void.TYPE);
+        } catch (IOException | InterruptedException e) {
+            return new Delivery(generateJson(e.getMessage(), false), 400, null, Void.TYPE);
         }
     }
 
     private String generateJson(String message, boolean success) {
-        JsonObject obj = new JsonObject();
-        obj.add("success", new JsonPrimitive(success));
-        obj.add("message", new JsonPrimitive(message));
-        return obj.toString();
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("success", new JsonPrimitive(success));
+        jsonObject.add("message", new JsonPrimitive(message));
+        return jsonObject.toString();
     }
 }
