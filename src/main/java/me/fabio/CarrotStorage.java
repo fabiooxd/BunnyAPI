@@ -12,7 +12,6 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +22,7 @@ public record CarrotStorage(String key, String url, String zoneName, HttpClient 
     public static final Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
 
     public CarrotStorage(String key, String zoneName, Endpoint endpoint) {
-        this(key, endpoint.buildUrl(), zoneName, HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
+        this(key, endpoint.buildUrl(), zoneName, HttpClient.newBuilder().build());
     }
 
     public Delivery upload(byte[] data, String path, String fileName) {
@@ -75,7 +74,6 @@ public record CarrotStorage(String key, String url, String zoneName, HttpClient 
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .method(action.getMethod(), publisher)
                     .header("AccessKey", key)
-                    .timeout(Duration.ofSeconds(5))
                     .uri(new URI(url + "/" + zoneName + "/" + method));
 
             if (data != null) {
